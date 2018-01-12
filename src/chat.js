@@ -1,8 +1,9 @@
 import React, {Component} from 'react';
+
 import {
     View,
-    Text,
-    StyleSheet
+    Text, Image,
+    StyleSheet, TouchableOpacity, TouchableWithoutFeedback, ImageBackground
 } from 'react-native';
 import {
     Fab,
@@ -20,9 +21,11 @@ import {
     Grid,
     Row
 } from 'native-base';
-import {GiftedChat} from 'react-native-gifted-chat';
+import {GiftedChat, Send, Bubble, Composer, InputToolbar, Day} from 'react-native-gifted-chat';
 import MyIcon from './components/myIcon';
+import Emoji from './components/emoji';
 
+require('moment/locale/ar');
 export default class Chat extends Component {
 
     constructor(props) {
@@ -31,10 +34,15 @@ export default class Chat extends Component {
             messages: [],
             name_dest: 'bob',
             myname: 'adel',
+            text: '',
+            emojiShow: false,
             active: false,
-            loading: true,
+            loading: false,
             serchingFor: true,
+            visible: true
+
         };
+        this.onPressButtonEmoji = this.onPressButtonEmoji.bind(this);
     }
 
 
@@ -102,62 +110,188 @@ export default class Chat extends Component {
                 loading: false,
                 messages: items
             })
-
-
         });
     }
 
 
     onSend(messages = []) {
 
-        // this.setState({
-        //     messages: GiftedChat.append(this.state.messages, messages),
-        // });
-        messages.forEach(message => {
-            var now = new Date().getTime()
-            this.chatRef.push({
-                _id: now,
-                text: message.text,
-                createdAt: now,
-                uid: this.user.uid,
-                order: -1 * now
-            })
-        })
+        this.setState({
+            messages: GiftedChat.append(this.state.messages, messages),
+        });
+        /* messages.forEach(message => {
+             var now = new Date().getTime()
+             this.chatRef.push({
+                 _id: now,
+                 text: message.text,
+                 createdAt: now,
+                 uid: this.user.uid,
+                 order: -1 * now
+             })
+         })*/
 
     }
 
-    getChatView() {
+    onPressButtonEmoji = () => {
+
+        this.setState({
+            emojiShow: !this.state.emojiShow
+        })
+    }
+
+
+    renderEmoji = () => {
+        return (
+            <TouchableOpacity style={[styles.containerShadow, {
+                width: 45,
+                height: 300,
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+            }]}
+                              onPress={this.onPressButtonEmoji}
+            >
+                <MyIcon type={'emoji'}
+                        style={{fontSize: 30, color: '#238AC5'}}/>
+            </TouchableOpacity>
+
+        );
+    }
+
+    onPressEmoji = (emoji) => {
+        // let adel=this.state.messages[1].text ;
+
+
+        this.setState({
+                text: this.state.text + emoji
+            }
+        )
+    };
+
+
+    getEmoji() {
+        if (this.state.emojiShow) {
+            return (<View style={[styles.containerShadow, {paddingRight:7,paddingLeft:5,flex: 1, backgroundColor: '#FFF',marginBottom:5}]}><Emoji
+                OnPressEmoji={(emoji) => this.onPressEmoji(emoji)}/></View>);
+        }
+        else return null;
+
+    }
+
+
+    renderSend(props) {
+        return (
+            <Send
+                {...props}
+                containerStyle={[styles.containerShadow, {
+                    width: 40,
+                    maxWidth: 40,
+                    height: 35,
+                    maxHeight: 45,
+                    padding: 0,
+                    flex: 1,
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }]}>
+
+                <MyIcon type={'send'}
+                        style={{fontSize: 30, color: '#238AC5'}}/>
+
+            </Send>
+        );
+    }
+
+
+    renderBubble(props) {
+        return ( <Bubble {...props}
+                         wrapperStyle={{
+                             left: {
+                                 backgroundColor: 'white',
+                             },
+                             right: {
+                                 backgroundColor: '#238AC5'
+                             }
+                         }}/>);
+    }
+
+    renderComposer(props) {
+        return (
+            <View style={styles.containerShadow}>
+                <Composer {...props} placeholder={'رسالة جديدة'} textInputStyle={{padding: 0, marginRight: 0}}/>
+            </View>);
+    }
+
+
+    renderInputToolbar(props) {
+        return (
+            <InputToolbar {...props}
+                          containerStyle={[{flex: 1, backgroundColor: 'transparent', borderWidth: 0, marginBottom: 10}]}
+                          primaryStyle={[{
+                              flex: 1,
+                              backgroundColor: 'transparent',
+                              borderWidth: 0,
+                              justifyContent: 'center',
+                              alignItems: 'center'
+                          }]}/>
+        );
+    }
+
+    renderDay(props) {
+        return (
+            <Day {...props}
+                          textStyle={{color:'#000'}}
+                         />
+        );
+    }
+
+    getChatView = () => {
+
         if (this.state.loading) return (
             <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}><Spinner color='#238AC5'/></View>);
-        else return (<View>
-            <View style={{flex: 1}}>
+        else return (
+            <ImageBackground source={require('./../assets/back2.jpg')} style={{flex: 1}}>
+                <View style={{flex: 1}}>
+                    <GiftedChat
+                        messages={this.state.messages}
+                        renderSend={this.renderSend}
+                        onSend={(messages) => this.onSend(messages)}
+                        renderAccessory={this.renderEmoji}
+                        renderComposer={this.renderComposer.bind(this)}
+                        renderInputToolbar={this.renderInputToolbar.bind(this)}
+                        text={this.state.text}
+                        renderBubble={this.renderBubble.bind(this)}
+                        renderDay={this.renderDay.bind(this)}
+                        locale={'ar'}
+                        user={{
+                            _id: 1,
+                        }}
+                        onInputTextChanged={(txt) => this.setState({text: txt})}
+                    />
 
-                <GiftedChat
-                    messages={this.state.messages}
-                    onSend={(messages) => this.onSend(messages)}
-                    user={{
-                        _id: 1,
-                    }}/></View>
-            <Fab
-                active={this.state.active}
-                direction="left"
-                containerStyle={{}}
-                style={{backgroundColor: '#238AC5', top: 50}}
-                position="topRight"
-                onPress={() => {
-                    this.setState({active: !this.state.active});
+                    {this.getEmoji()}
+                </View>
+                <Fab
+                    active={this.state.active}
+                    direction="right"
+                    containerStyle={{}}
+                    style={{backgroundColor: '#238AC5', top: 5}}
+                    position="topLeft"
+                    onPress={() => {
+                        this.setState({active: !this.state.active});
 
-                }}>
+                    }}>
 
-                <MyIcon type={'menu'}/>
+                    <MyIcon type={'menu'}/>
 
-                <Button style={{backgroundColor: '#34A34F', marginTop: 50}}>
-                    <MyIcon type={'change'}/>
-                </Button>
-                <Button style={{backgroundColor: '#E53935', marginTop: 50}}>
-                    <MyIcon type={'logout'}/>
-                </Button>
-            </Fab> </View>);
+                    <Button style={{backgroundColor: '#34A34F', marginTop: 5}}>
+                        <MyIcon type={'change'}/>
+                    </Button>
+                    <Button style={{backgroundColor: '#E53935', marginTop: 5}}>
+                        <MyIcon type={'logout'}/>
+                    </Button>
+                </Fab>
+            </ImageBackground>
+        );
 
     }
 
@@ -198,5 +332,27 @@ const styles = StyleSheet.create({
         marginRight: 10,
         marginLeft: 10,
 
+    },
+    backgroundImage: {
+        flex: 1,
+        resizeMode: 'cover', // or 'stretch'
+    },
+    containerShadow: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 0,
+        borderRadius: 10,
+        backgroundColor: '#FFF',
+        borderColor: '#ddd',
+        borderBottomWidth: 0,
+        shadowColor: '#000',
+        shadowOffset: {width: 0, height: 2},
+        shadowOpacity: 0.5,
+        shadowRadius: 2,
+        elevation: 1,
+        marginLeft: 5,
+        marginRight: 5,
+        marginTop: 10,
     }
-})
+});

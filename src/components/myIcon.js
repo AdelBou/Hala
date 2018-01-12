@@ -1,30 +1,32 @@
-import FontAwesome, { Icons } from 'react-native-fontawesome';
- import React, {Component} from 'react';
- import {
+import FontAwesome, {Icons} from 'react-native-fontawesome';
+import React, {Component} from 'react';
+import {
     Text
 } from 'react-native';
 
-export default class MyIcon extends Component{
+export default class MyIcon extends Component {
 
-    constructor(props){
+    constructor(props) {
         super(props);
-         this.state = {
-                    icon: Icons.menu
-                };
+        this.state = {
+            icon: Icons.menu
+        };
 
     }
-    componentDidMount(){
-             this.setState({
-                     icon: (this.props.type==='menu')? Icons.bars:(this.props.type==='change')?Icons.users:Icons.signOut,
-                });
+
+    componentDidMount() {
+        this.setState({
+            icon: (this.props.type === 'menu') ? Icons.bars : (this.props.type === 'change') ? Icons.users : (this.props.type === 'emoji')?Icons.smileO:(this.props.type === 'emoji')?Icons.paperPlaneO:Icons.signOut,
+        });
     }
-    getTheicon(){
+
+    getTheicon() {
 
 
-         return (
-                    <Text style={{margin: 10, fontSize: 18,textAlign: 'left',color:'#FFF'}}>
-                        <FontAwesome>{this.state.icon}</FontAwesome>
-                    </Text>
+        return (
+            <Text style={[{ fontSize: 18, color: '#FFF'},this.props.style]}>
+                <FontAwesome>{this.state.icon}</FontAwesome>
+            </Text>
 
         );
 
