@@ -5,37 +5,38 @@
  */
 
 import React, {Component} from 'react';
-import {
-    Platform,
-    StyleSheet,
-    Text,
-    View
-} from 'react-native';
-import LoginForm from './src/components/LoginForm';
-import Chat from "./src/chat";
+import {Provider} from 'react-redux';
+import {createStore, applyMiddleware} from 'redux';
+import firebase from 'firebase';
+import ReduxThunk from 'redux-thunk';
+import reducers from './src/reducers';
+import RouterComponent from './src/Router';
 
-export default class App extends Component<{}> {
+export default class App extends Component {
+
+
+    componentWillMount() {
+        // Initialize Firebase
+        var config = {
+            apiKey: 'AIzaSyCmYNODijBzsDOUQIthB3uG364uwJXsQrQ',
+            authDomain: 'chat-f6816.firebaseapp.com',
+            databaseURL: 'https://chat-f6816.firebaseio.com',
+            projectId: 'chat-f6816',
+            storageBucket: 'chat-f6816.appspot.com',
+            messagingSenderId: '50718337781'
+        };
+        firebase.initializeApp(config);
+    }
+
     render() {
-        return (<Chat/>
+        const store = createStore(reducers, {}, applyMiddleware(ReduxThunk));
+
+        return (
+            <Provider store={store}>
+                <RouterComponent/>
+            </Provider>
         );
     }
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#F5FCFF',
-    },
-    welcome: {
-        fontSize: 20,
-        textAlign: 'center',
-        margin: 10,
-    },
-    instructions: {
-        textAlign: 'center',
-        color: '#333333',
-        marginBottom: 5,
-    },
-});
+
