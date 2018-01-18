@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
+import Iconwassim from 'react-native-vector-icons/Feather';
 import {
     View,
     Text, Image,
@@ -49,149 +50,70 @@ class Chat extends Component {
 
         };
 
+        this.props.set_user(this.props.userName);
+        this.user = this.props.thisUser;
+        this.friend = this.props.friend;
+        this.chatRef = this.getRef().child('chat/' + this.generateChatId());
+        this.chatRefData = this.chatRef.orderByChild('order');
+        this.onSend = this.onSend.bind(this);
         this.onPressButtonEmoji = this.onPressButtonEmoji.bind(this);
+        console.log("chatid"+this.generateChatId());
+
     }
 
+      generateChatId() {
+        if(this.user.id > this.friend.id)
+            return `${this.user.id}-${this.friend.id}`;
+        else
+            return `${this.friend.id}-${this.user.id}`
+    }
+      getRef() {
+        return firebase.database().ref();
+    }
 
-    componentDidMount() {
-        this.props.set_user(this.props.userName);
-        /*
-        let user = firebase.auth().currentUser;
-        let theUserToPush = {
-            id: user.uid,
-            connected: true,
-            searchingForFriend: true,
-            name: this.props.userName,
-            chattingWith: null,
-        };
-        this.setState({
-            user: theUserToPush,
-        });
-/*
-        firebase.database().ref(`/users/${theUserToPush.id}`).limitToFirst(1).on(
-            'value', snapshot => {
-                 let x=null ;
-                snapshot.forEach(function (childSnapshot) {
-                    x=childSnapshot.val().chattingWith;
-                });
+    listenForItems(chatRef) {
+        chatRef.on('value', (snap) => {
 
-                if (x) {
-                    firebase.database().ref(`/users/${x}`).on('value', snapshot => {
-                        this.setState({
-                            friend: snapshot.val(),
-                            chatting: true,
-                        })
-                    })
-                }
-                else
-                    {
-                        firebase.database().ref(`/users/${theUserToPush.id}`).set(
-                            theUserToPush
-                        );
-                          this.setState({
-                            friend: null,
-                            chatting: false,
-                        })
-
+            // get children as an array
+            var items = [];
+            snap.forEach((child) => {
+                var avatar = 'https://www.gravatar.com/avatar/'
+               // var name = child.val().uid == this.user.id ? this.user.name: this.friend.name
+                items.push({
+                    _id: child.val().createdAt,
+                    text: child.val().text,
+                    createdAt: new Date(child.val().createdAt),
+                    user: {
+                        _id: child.val().uid,
+                        avatar: avatar
                     }
-                }
-            );
-*/
+                });
+            });
 
-        /*  this.setState({
-              messages: [
-                  {
-                      _id: 1,
-                      text: 'يا هلا بالحبايب',
-                      createdAt: new Date(),
-                      user: {
-                          _id: 2,
-                          name: 'React Native',
-                          avatar: 'https://facebook.github.io/react/img/logo_og.png',
-                      },
-                  },
-              ],
-          });*/
-        //recupérer les messgaes // ???
+            this.setState({
+                loading: false,
+                messages: items
+            })
 
+
+        });
+    }
+   componentDidMount() {
+        this.listenForItems(this.chatRefData);
     }
 
     componentWillUnmount() {
-        //Couper la connexion// ???
-        // this.chatRefData.off()
-
+        this.chatRefData.off()
     }
 
-    /*
-        // initier la connexion
-        startTheChatWith=()=> {
-            firebase.database().ref(`/users/${this.state.user.id}/chanttingWith`).set(
-                this.state.friend.id
-            );
-
-            firebase.database().ref(`/users/${this.state.friend.id}/chanttingWith`).set(
-                   this.state.user.id
-            );
-            this.chatRef = this.getRef().child('chat/' + this.generateChatId());
-            this.chatRefData = this.chatRef.orderByChild('order');
-            this.onSend = this.onSend.bind(this);
-        }
-
-        generateChatId() {
-            if (this.state.user.id > this.state.friend.id)
-                return `${this.state.user.id}-${this.state.friend.id}`;
-            else
-                return `${this.state.friend.id}-${this.state.user.id}`
-        }
-
-        getRef() {
-            return firebase.database().ref();
-        }
-    */
-
-    /*
-        listenForItems(chatRef) {
-            chatRef.on('value', (snap) => {
-                // get children as an array
-                var items = [];
-                snap.forEach((child) => {
-                    var name = child.val().id == this.state.user.id ? this.state.user.name : this.state.friend.name;
-                    items.push({
-                        _id: child.val().createdAt,
-                        text: child.val().text,
-                        createdAt: new Date(child.val().createdAt),
-                        user: {
-                            _id: child.val().uid,
-                        }
-                    });
-                });
-
-                this.setState({
-                    loading: false,
-                    messages: items
-                })
-            });
-        }*/
 
 
-    onSend(messages = []) {
 
-        this.setState({
-            messages: GiftedChat.append(this.props.messages, messages),
-        });
-        /*
-                messages.forEach(message => {
-                    var now = new Date().getTime();
-                    this.chatRef.push({
-                        _id: now,
-                        text: message.text,
-                        createdAt: now,
-                        uid: this.user.uid,
-                        order: -1 * now
-                    })
-                })*/
 
-    }
+
+
+
+
 
     onPressButtonEmoji = () => {
 
@@ -199,6 +121,24 @@ class Chat extends Component {
             emojiShow: !this.state.emojiShow
         })
     };
+
+        onSend(messages = []) {
+
+        // this.setState({
+        //     messages: GiftedChat.append(this.state.messages, messages),
+        // });
+        messages.forEach(message => {
+            var now = new Date().getTime()
+            this.chatRef.push({
+                _id: now,
+                text: message.text,
+                createdAt: now,
+                uid: this.props.thisUser.id,
+                order: -1 * now
+            })
+        })
+
+    }
 
 
     renderEmoji = () => {
@@ -212,6 +152,7 @@ class Chat extends Component {
             }]}
                               onPress={this.onPressButtonEmoji}
             >
+
                 <MyIcon type={'emoji'}
                         style={{fontSize: 30, color: '#238AC5'}}/>
             </TouchableOpacity>
@@ -261,8 +202,7 @@ class Chat extends Component {
                     justifyContent: 'center'
                 }]}>
 
-                <MyIcon type={'send'}
-                        style={{fontSize: 30, color: '#238AC5'}}/>
+              <Iconwassim name="navigation" size={30} color="#238AC5" />
 
             </Send>
         );
@@ -273,7 +213,7 @@ class Chat extends Component {
         return ( <Bubble {...props}
                          wrapperStyle={{
                              left: {
-                                 backgroundColor: 'white',
+                                 backgroundColor: '#CFD8DC',
                              },
                              right: {
                                  backgroundColor: '#238AC5'
@@ -283,9 +223,9 @@ class Chat extends Component {
 
     renderComposer(props) {
         return (
-            <View style={styles.containerShadow}>
+            <View style={[styles.containerShadow,{backgroundColor:'#EEEEEE'}]}>
                 <Composer {...props} placeholder={'رسالة جديدة'}
-                          textInputStyle={{alignSelf: 'stretch', padding: 0, marginRight: 0}}/>
+                          textInputStyle={{alignSelf: 'stretch', paddingLeft: 10,paddingRight: 10, marginRight: 0}}/>
             </View>);
     }
 
@@ -295,9 +235,11 @@ class Chat extends Component {
             <InputToolbar {...props}
                           containerStyle={[{
                               flex: 1,
-                              backgroundColor: 'transparent',
-                              borderWidth: 0,
-                              borderTopColor: 'transparent'
+                              backgroundColor: '#FFF',
+                              borderColor:'#000',
+                              borderWidth: 1,
+                              borderTopColor: 'transparent',
+
                           }]}
                           primaryStyle={[, styles.containerShadow, {
                               flex: 1,
@@ -318,18 +260,22 @@ class Chat extends Component {
     }
 
     serchForFriend = () => {
+        this.props.set_user(this.props.userName);
         this.props.search_friend(this.props.thisUser);
     };
 
 
     logOut = () => {
+       this.props.set_user(this.props.userName);
+       this.chatRef.remove();
+
     };
     getTheChat = () => {
-        if (this.props.chatting) {
+        if (this.props.chatting && !this.props.loading) {
             return (
                 <View style={{flex: 1}}>
                     <GiftedChat
-                        messages={this.props.messages}
+                        messages={this.state.messages}
                         renderSend={this.renderSend}
                         onSend={(messages) => this.onSend(messages)}
                         renderAccessory={this.renderEmoji}
@@ -340,7 +286,7 @@ class Chat extends Component {
                         renderDay={this.renderDay.bind(this)}
                         locale={'ar'}
                         user={{
-                            _id: 1,
+                            _id: this.props.thisUser.id
                         }}
                         onInputTextChanged={(txt) => this.setState({text: txt})}
                     />
@@ -349,12 +295,21 @@ class Chat extends Component {
                 </View>
             );
         }
-        else return null;
+        else return(
+            <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
+                <Text style={{color:'#238AC5',fontSize:25}}>{this.props.error}</Text>
+                {this.getSpinner(this.props.loading)}
+            </View>
+        );
+    }
+
+    getSpinner(x){
+        if (x) return <Spinner size="large" color='#238AC5'/>;
     }
 
     getTheMainView = () => {
         if (this.state.loading) return (
-            <ImageBackground source={require('../../assets/back.png')} style={{flex: 1}}> <View
+            <ImageBackground source={require('../../assets/back3.png')} style={{flex: 1}}> <View
                 style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}><Spinner
                 color='#238AC5'/></View></ImageBackground>);
         else return (
@@ -388,16 +343,20 @@ class Chat extends Component {
     render() {
         return (
             <Container>
-                <Header>
+                <Header style={{backgroundColor:'#238AC5'}} androidStatusBarColor="#238AC5">
                     <Grid style={{paddingTop: 18}}>
                         <Col>
-                            <Title>{this.props.thisUser.name} </Title>
+                            <Title style={{fontSize: 20}}>
+                            {this.props.friend?  this.props.friend.name:''}
+                            </Title>
+                        </Col>
+                         <Col>
+                            <Title >
+                            {this.props.friend? '  شات مع  ' :''}
+                            </Title>
                         </Col>
                         <Col>
-                            <Title>شات</Title>
-                        </Col>
-                        <Col>
-                            <Title> {this.props.friend?this.props.friend.name:''} </Title>
+                            <Title>{this.props.thisUser ? this.props.thisUser.name : ''}  </Title>
 
                         </Col>
                     </Grid>
@@ -409,7 +368,7 @@ class Chat extends Component {
 
         );
     }
-}
+};
 
 
 const styles = StyleSheet.create({
@@ -454,9 +413,9 @@ const mapStateToProps = ({chat}) => {
         error:chat.error,
         user:chat.thisUser
     };*/
-    const {thisUser, messages,chatting,friend} = chat;
+    const {thisUser, messages, chatting, friend, chatRef,error,loading} = chat;
     return {
-        thisUser, messages ,chatting ,friend
+        thisUser, messages, chatting, friend, chatRef,error,loading
     }
 };
 
