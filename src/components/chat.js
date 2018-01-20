@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import Iconwassim from 'react-native-vector-icons/Feather';
+import FontAwesome, {Icons} from 'react-native-fontawesome';
 import {
     View,
     Text, Image,
@@ -46,28 +47,28 @@ class Chat extends Component {
             serchingFor: true,
             visible: true,
             chatting: false,
-            friend: null,
+            friend: this.props.friend,
 
         };
 
         this.props.set_user(this.props.userName);
-        this.user = this.props.thisUser;
-        this.friend = this.props.friend;
         this.chatRef = this.getRef().child('chat/' + this.generateChatId());
         this.chatRefData = this.chatRef.orderByChild('order');
         this.onSend = this.onSend.bind(this);
         this.onPressButtonEmoji = this.onPressButtonEmoji.bind(this);
-        console.log("chatid"+this.generateChatId());
 
     }
 
-      generateChatId() {
-        if(this.user.id > this.friend.id)
-            return `${this.user.id}-${this.friend.id}`;
+    generateChatId(friend) {
+        if (friend)
+        if (this.props.thisUser.id > friend.id)
+            return `${this.props.thisUser.id}-${friend.id}`;
         else
-            return `${this.friend.id}-${this.user.id}`
+            return `${friend.id}-${this.props.thisUser.id}`;
+        else return '--';
     }
-      getRef() {
+
+    getRef() {
         return firebase.database().ref();
     }
 
@@ -78,7 +79,7 @@ class Chat extends Component {
             var items = [];
             snap.forEach((child) => {
                 var avatar = 'https://www.gravatar.com/avatar/'
-               // var name = child.val().uid == this.user.id ? this.user.name: this.friend.name
+                // var name = child.val().uid == this.user.id ? this.user.name: this.friend.name
                 items.push({
                     _id: child.val().createdAt,
                     text: child.val().text,
@@ -98,21 +99,23 @@ class Chat extends Component {
 
         });
     }
-   componentDidMount() {
+
+    componentDidMount() {
+        this.listenForItems(this.chatRefData);
+    }
+    componentWillMount(){
+        this.setState({friend:this.props.friend});
+    }
+    componentWillReceiveProps(nextProps){
+        this.chatRefData.off();
+        this.chatRef = this.getRef().child('chat/' + this.generateChatId(nextProps.friend));
+        this.chatRefData = this.chatRef.orderByChild('order');
         this.listenForItems(this.chatRefData);
     }
 
     componentWillUnmount() {
         this.chatRefData.off()
     }
-
-
-
-
-
-
-
-
 
 
     onPressButtonEmoji = () => {
@@ -122,7 +125,7 @@ class Chat extends Component {
         })
     };
 
-        onSend(messages = []) {
+    onSend(messages = []) {
 
         // this.setState({
         //     messages: GiftedChat.append(this.state.messages, messages),
@@ -202,7 +205,7 @@ class Chat extends Component {
                     justifyContent: 'center'
                 }]}>
 
-              <Iconwassim name="navigation" size={30} color="#238AC5" />
+                <Iconwassim name="navigation" size={30} color="#238AC5"/>
 
             </Send>
         );
@@ -223,9 +226,9 @@ class Chat extends Component {
 
     renderComposer(props) {
         return (
-            <View style={[styles.containerShadow,{backgroundColor:'#EEEEEE'}]}>
+            <View style={[styles.containerShadow, {backgroundColor: '#EEEEEE'}]}>
                 <Composer {...props} placeholder={'رسالة جديدة'}
-                          textInputStyle={{alignSelf: 'stretch', paddingLeft: 10,paddingRight: 10, marginRight: 0}}/>
+                          textInputStyle={{alignSelf: 'stretch', paddingLeft: 10, paddingRight: 10, marginRight: 0}}/>
             </View>);
     }
 
@@ -236,7 +239,7 @@ class Chat extends Component {
                           containerStyle={[{
                               flex: 1,
                               backgroundColor: '#FFF',
-                              borderColor:'#000',
+                              borderColor: '#000',
                               borderWidth: 1,
                               borderTopColor: 'transparent',
 
@@ -266,8 +269,8 @@ class Chat extends Component {
 
 
     logOut = () => {
-       this.props.set_user(this.props.userName);
-       this.chatRef.remove();
+        this.props.set_user(this.props.userName);
+        this.chatRef.remove();
 
     };
     getTheChat = () => {
@@ -295,15 +298,15 @@ class Chat extends Component {
                 </View>
             );
         }
-        else return(
-            <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
-                <Text style={{color:'#238AC5',fontSize:25}}>{this.props.error}</Text>
+        else return (
+            <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+                <Text style={{color: '#238AC5', fontSize: 25}}>{this.props.error}</Text>
                 {this.getSpinner(this.props.loading)}
             </View>
         );
     }
 
-    getSpinner(x){
+    getSpinner(x) {
         if (x) return <Spinner size="large" color='#238AC5'/>;
     }
 
@@ -315,50 +318,58 @@ class Chat extends Component {
         else return (
             <ImageBackground source={require('../../assets/back3.png')} style={{flex: 1}}>
                 {this.getTheChat()}
-                <Fab
-                    active={this.state.active}
-                    direction="right"
-                    containerStyle={{}}
-                    style={{backgroundColor: '#238AC5', top: 5}}
-                    position="topLeft"
-                    onPress={() => {
-                        this.setState({active: !this.state.active});
-
-                    }}>
-
-                    <MyIcon type={'menu'}/>
-
-                    <Button style={{backgroundColor: '#34A34F', marginTop: 5}} onPress={this.serchForFriend}>
-                        <MyIcon type={'change'}/>
-                    </Button>
-                    <Button style={{backgroundColor: '#E53935', marginTop: 5}} onPress={this.logOut}>
-                        <MyIcon type={'logout'}/>
-                    </Button>
-                </Fab>
             </ImageBackground>
         );
+
+    }
+
+    goback() {
+
+    }
+
+    ban() {
 
     }
 
     render() {
         return (
             <Container>
-                <Header style={{backgroundColor:'#238AC5'}} androidStatusBarColor="#238AC5">
-                    <Grid style={{paddingTop: 18}}>
-                        <Col>
-                            <Title style={{fontSize: 20}}>
-                            {this.props.friend?  this.props.friend.name:''}
-                            </Title>
+                <Header style={{backgroundColor: '#238AC5'}} androidStatusBarColor="#238AC5">
+                    <Grid >
+                        <Col size={1}>
+                            <TouchableOpacity onPress={this.logOut}
+                                              style={[{flex: 1, justifyContent: 'center', alignItems: 'center'}]}>
+                                <Text style={[{fontSize: 22, color: '#FFF'}]}>
+                                    <FontAwesome>{Icons.chevronLeft}</FontAwesome>
+                                </Text>
+                            </TouchableOpacity>
                         </Col>
-                         <Col>
-                            <Title >
-                            {this.props.friend? '  شات مع  ' :''}
-                            </Title>
+                        <Col size={3}>
+                            <TouchableOpacity onPress={this.logOut}
+                                              style={[{flex: 1, justifyContent: 'center', alignItems: 'center'}]}>
+                                <Text style={[{fontSize: 22, color: '#FFF'}]}>
+                                    {this.props.friend.name}
+                                </Text>
+                            </TouchableOpacity>
                         </Col>
-                        <Col>
-                            <Title>{this.props.thisUser ? this.props.thisUser.name : ''}  </Title>
 
+                        <Col size={1}>
+                            <TouchableOpacity onPress={this.goback}
+                                              style={[{flex: 1, justifyContent: 'center', alignItems: 'center'}]}>
+                                <Text style={[{fontSize: 22, color: '#FFF'}]}>
+                                    <FontAwesome>{Icons.ban}</FontAwesome>
+                                </Text>
+                            </TouchableOpacity>
                         </Col>
+                        <Col size={1}>
+                            <TouchableOpacity onPress={this.serchForFriend}
+                                              style={[{flex: 1, justifyContent: 'center', alignItems: 'center'}]}>
+                                <Text style={[{fontSize: 22, color: '#FFF'}]}>
+                                    <FontAwesome>{Icons.share}</FontAwesome>
+                                </Text>
+                            </TouchableOpacity>
+                        </Col>
+
                     </Grid>
 
                 </Header>
@@ -413,9 +424,9 @@ const mapStateToProps = ({chat}) => {
         error:chat.error,
         user:chat.thisUser
     };*/
-    const {thisUser, messages, chatting, friend, chatRef,error,loading} = chat;
+    const {thisUser, messages, chatting, friend, error, loading} = chat;
     return {
-        thisUser, messages, chatting, friend, chatRef,error,loading
+        thisUser, messages, chatting, friend, error, loading
     }
 };
 
